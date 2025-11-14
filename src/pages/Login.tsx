@@ -5,26 +5,66 @@ import { Label } from "@/components/ui/label";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Train } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  email: z.string().email("Invalid email address").max(255),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn, user } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual login logic
-    toast({
-      title: "Login Successful",
-      description: "Welcome back to RailBook!",
-    });
-    navigate("/dashboard");
+    
+    try {
+      const validated = loginSchema.parse(formData);
+      setLoading(true);
+
+      const { error } = await signIn(validated.email, validated.password);
+
+      if (error) {
+        toast({
+          title: "Login Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Login Successful",
+          description: "Welcome back to RailBook!",
+        });
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -78,8 +118,8 @@ const Login = () => {
               </Link>
             </div>
 
-            <Button type="submit" className="w-full bg-gradient-to-r from-primary to-secondary">
-              Login
+            <Button type="submit" className="w-full bg-gradient-to-r from-primary to-secondary" disabled={loading}>
+              {loading ? "Logging in..." : "Login"}
             </Button>
           </form>
 

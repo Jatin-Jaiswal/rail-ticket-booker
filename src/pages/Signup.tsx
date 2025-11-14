@@ -5,13 +5,28 @@ import { Label } from "@/components/ui/label";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Train } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { z } from "zod";
+
+const signupSchema = z.object({
+  fullName: z.string().min(2, "Name must be at least 2 characters").max(100),
+  email: z.string().email("Invalid email address").max(255),
+  phone: z.string().min(10, "Phone must be at least 10 digits").max(15),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
 
 const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signUp, user } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -20,24 +35,58 @@ const Signup = () => {
     confirmPassword: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
-      return;
-    }
+    try {
+      const validated = signupSchema.parse(formData);
+      setLoading(true);
 
-    // TODO: Implement actual signup logic
-    toast({
-      title: "Account Created",
-      description: "Welcome to RailBook! Please login to continue.",
-    });
-    navigate("/login");
+      const { error } = await signUp(
+        validated.email,
+        validated.password,
+        validated.fullName,
+        validated.phone
+      );
+
+      if (error) {
+        if (error.message.includes("already registered")) {
+          toast({
+            title: "Account Already Exists",
+            description: "This email is already registered. Please login instead.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Signup Failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Account Created",
+          description: "Welcome to RailBook! You can now start booking tickets.",
+        });
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -123,8 +172,8 @@ const Signup = () => {
               </span>
             </div>
 
-            <Button type="submit" className="w-full bg-gradient-to-r from-primary to-secondary">
-              Create Account
+            <Button type="submit" className="w-full bg-gradient-to-r from-primary to-secondary" disabled={loading}>
+              {loading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
 

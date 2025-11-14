@@ -1,11 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { Train, User, Menu, X } from "lucide-react";
+import { Train, User, Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -37,13 +43,27 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>
-              <User className="mr-2 h-4 w-4" />
-              Login
-            </Button>
-            <Button size="sm" className="bg-gradient-to-r from-primary to-secondary" onClick={() => navigate("/signup")}>
-              Sign Up
-            </Button>
+            {user ? (
+              <>
+                <span className="text-sm text-muted-foreground">
+                  Hello, {user.email?.split('@')[0]}
+                </span>
+                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>
+                  <User className="mr-2 h-4 w-4" />
+                  Login
+                </Button>
+                <Button size="sm" className="bg-gradient-to-r from-primary to-secondary" onClick={() => navigate("/signup")}>
+                  Sign Up
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -87,12 +107,26 @@ const Navbar = () => {
               Dashboard
             </Link>
             <div className="px-4 space-y-2 pt-2">
-              <Button variant="outline" size="sm" className="w-full" onClick={() => navigate("/login")}>
-                Login
-              </Button>
-              <Button size="sm" className="w-full bg-gradient-to-r from-primary to-secondary" onClick={() => navigate("/signup")}>
-                Sign Up
-              </Button>
+              {user ? (
+                <>
+                  <div className="text-sm text-muted-foreground px-4 py-2">
+                    Logged in as: {user.email}
+                  </div>
+                  <Button variant="outline" size="sm" className="w-full" onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => navigate("/login")}>
+                    Login
+                  </Button>
+                  <Button size="sm" className="w-full bg-gradient-to-r from-primary to-secondary" onClick={() => navigate("/signup")}>
+                    Sign Up
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         )}
