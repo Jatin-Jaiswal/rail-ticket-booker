@@ -14,16 +14,224 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          booking_date: string
+          booking_status: string
+          created_at: string
+          id: string
+          journey_date: string
+          passenger_age: number
+          passenger_gender: string
+          passenger_name: string
+          payment_id: string | null
+          payment_status: string
+          seat_numbers: string[]
+          total_amount: number
+          train_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          booking_date: string
+          booking_status?: string
+          created_at?: string
+          id?: string
+          journey_date: string
+          passenger_age: number
+          passenger_gender: string
+          passenger_name: string
+          payment_id?: string | null
+          payment_status?: string
+          seat_numbers: string[]
+          total_amount: number
+          train_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          booking_date?: string
+          booking_status?: string
+          created_at?: string
+          id?: string
+          journey_date?: string
+          passenger_age?: number
+          passenger_gender?: string
+          passenger_name?: string
+          payment_id?: string | null
+          payment_status?: string
+          seat_numbers?: string[]
+          total_amount?: number
+          train_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_train_id_fkey"
+            columns: ["train_id"]
+            isOneToOne: false
+            referencedRelation: "trains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      seats: {
+        Row: {
+          created_at: string
+          id: string
+          is_available: boolean
+          locked_by: string | null
+          locked_until: string | null
+          seat_number: string
+          train_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          locked_by?: string | null
+          locked_until?: string | null
+          seat_number: string
+          train_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          locked_by?: string | null
+          locked_until?: string | null
+          seat_number?: string
+          train_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seats_train_id_fkey"
+            columns: ["train_id"]
+            isOneToOne: false
+            referencedRelation: "trains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trains: {
+        Row: {
+          active: boolean
+          arrival_time: string
+          available_seats: number
+          class_type: string
+          created_at: string
+          departure_time: string
+          destination_station: string
+          duration_hours: number
+          id: string
+          price_per_seat: number
+          source_station: string
+          total_seats: number
+          train_name: string
+          train_number: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          arrival_time: string
+          available_seats: number
+          class_type: string
+          created_at?: string
+          departure_time: string
+          destination_station: string
+          duration_hours: number
+          id?: string
+          price_per_seat: number
+          source_station: string
+          total_seats: number
+          train_name: string
+          train_number: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          arrival_time?: string
+          available_seats?: number
+          class_type?: string
+          created_at?: string
+          departure_time?: string
+          destination_station?: string
+          duration_hours?: number
+          id?: string
+          price_per_seat?: number
+          source_station?: string
+          total_seats?: number
+          train_name?: string
+          train_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_seats_for_train: {
+        Args: { p_total_seats: number; p_train_id: string }
+        Returns: undefined
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +358,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
