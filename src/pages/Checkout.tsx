@@ -46,48 +46,32 @@ const Checkout = () => {
 
       setLoading(true);
 
-      // Create booking
-      const { data: booking, error: bookingError } = await supabase
-        .from("bookings")
-        .insert({
-          user_id: user?.id,
-          train_id: train.id,
-          booking_date: new Date().toISOString().split('T')[0],
-          journey_date: searchData.date,
-          passenger_name: validated.name,
-          passenger_age: validated.age,
-          passenger_gender: validated.gender,
-          seat_numbers: selectedSeats,
-          total_amount: totalAmount,
-          booking_status: "confirmed",
-          payment_status: "completed",
-          payment_id: `PAY-${Date.now()}`,
-        })
-        .select()
-        .single();
+      // Use atomic database function to prevent race conditions
+      const { data: bookingId, error: bookingError } = await supabase
+        .rpc("create_booking_atomic", {
+          p_user_id: user?.id,
+          p_train_id: train.id,
+          p_booking_date: new Date().toISOString().split('T')[0],
+          p_journey_date: searchData.date,
+          p_passenger_name: validated.name,
+          p_passenger_age: validated.age,
+          p_passenger_gender: validated.gender,
+          p_seat_numbers: selectedSeats,
+          p_total_amount: totalAmount,
+          p_payment_id: `PAY-${Date.now()}`,
+        });
 
-      if (bookingError) throw bookingError;
-
-      // Update seat availability
-      const { error: seatError } = await supabase
-        .from("seats")
-        .update({ is_available: false })
-        .eq("train_id", train.id)
-        .in("seat_number", selectedSeats);
-
-      if (seatError) throw seatError;
-
-      // Update train available seats
-      const { error: trainError } = await supabase
-        .from("trains")
-        .update({ available_seats: train.availableSeats - selectedSeats.length })
-        .eq("id", train.id);
-
-      if (trainError) throw trainError;
+      if (bookingError) {
+        // Handle specific error for unavailable seats
+        if (bookingError.message?.includes("no longer available")) {
+          throw new Error("Some seats were booked by another user. Please select different seats.");
+        }
+        throw bookingError;
+      }
 
       toast({
         title: "Booking Confirmed!",
-        description: `Your booking ID is ${booking.id.slice(0, 8)}. Check your email for the e-ticket.`,
+        description: `Your booking ID is ${bookingId?.toString().slice(0, 8)}. Check your email for the e-ticket.`,
       });
 
       navigate("/dashboard");
