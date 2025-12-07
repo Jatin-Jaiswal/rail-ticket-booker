@@ -218,6 +218,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_booking_atomic: {
+        Args: {
+          p_booking_date: string
+          p_journey_date: string
+          p_passenger_age: number
+          p_passenger_gender: string
+          p_passenger_name: string
+          p_payment_id: string
+          p_seat_numbers: string[]
+          p_total_amount: number
+          p_train_id: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       generate_seats_for_train: {
         Args: { p_total_seats: number; p_train_id: string }
         Returns: undefined
